@@ -66,9 +66,9 @@ def detect_scope(question: str) -> str:
         user_text=question.strip(),
         temperature=0,
         max_output_tokens=30,
+        purpose="scope",
     ).strip().upper()
 
-    # Accept a plain label only; unexpected model output fails closed.
     result = result.replace("`", "").strip()
     if result not in ALLOWED_LABELS:
         raise RuntimeError(f"Invalid scope detector output: {result!r}")
