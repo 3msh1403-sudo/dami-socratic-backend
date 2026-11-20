@@ -8,12 +8,14 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.11
-      - key: GEMINI_API_KEY
+      - key: SCOPE_GEMINI_API_KEY
+        sync: false
+      - key: CHAT_GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL_NAME
-        value: gemini-2.5-flash
+        sync: false
       - key: SCOPE_MODEL_NAME
-        value: gemini-2.5-flash
+        sync: false
       - key: GOOGLE_EMBEDDING_MODEL
         value: gemini-embedding-001
       - key: EMBEDDING_DIMENSION
