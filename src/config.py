@@ -18,37 +18,39 @@ def _json_env(name: str, default: str) -> dict:
     return value
 
 
-# Google Gemini
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-2.5-flash").strip()
-SCOPE_MODEL_NAME = os.getenv("SCOPE_MODEL_NAME", GEMINI_MODEL_NAME).strip()
+# Two independent Google AI Studio projects.
+# GEMINI_API_KEY remains as a backward-compatible fallback for older deployments.
+LEGACY_GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+SCOPE_GEMINI_API_KEY = (
+    os.getenv("SCOPE_GEMINI_API_KEY", "").strip() or LEGACY_GEMINI_API_KEY
+)
+CHAT_GEMINI_API_KEY = (
+    os.getenv("CHAT_GEMINI_API_KEY", "").strip() or LEGACY_GEMINI_API_KEY
+)
+EMBEDDING_GEMINI_API_KEY = os.getenv("EMBEDDING_GEMINI_API_KEY", "").strip()
 
-# Google Embedding API. The output dimension MUST match the existing
-# Supabase pgvector column dimension. Dami's current schema is 768.
+GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "").strip()
+SCOPE_MODEL_NAME = os.getenv("SCOPE_MODEL_NAME", "").strip()
+
 GOOGLE_EMBEDDING_MODEL = os.getenv(
     "GOOGLE_EMBEDDING_MODEL", "gemini-embedding-001"
 ).strip()
 EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", "768"))
 
-# Supabase service-role credentials must remain server-side.
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 SUPABASE_RPC_NAME = os.getenv("SUPABASE_RPC_NAME", "match_dami_documents").strip()
 
-# Retrieval settings
 TEXTBOOK_TOP_K = int(os.getenv("TEXTBOOK_TOP_K", "4"))
 QA_TOP_K = int(os.getenv("QA_TOP_K", "3"))
 MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD", "0.0"))
 
-# No restrictive textbook metadata filter by default, because the exact
-# metadata shape of the live Dami rows has not yet been verified.
 TEXTBOOK_FILTER_METADATA = _json_env("TEXTBOOK_FILTER_METADATA", "{}")
 QA_FILTER_METADATA = _json_env("QA_FILTER_METADATA", '{"type":"qa_example"}')
 QA_RETRIEVAL_ENABLED = os.getenv("QA_RETRIEVAL_ENABLED", "false").lower() in {
     "1", "true", "yes", "on"
 }
 
-# Application
 MAX_QUESTION_LENGTH = int(os.getenv("MAX_QUESTION_LENGTH", "4000"))
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "45"))
 CORS_ORIGINS = [
@@ -58,10 +60,34 @@ CORS_ORIGINS = [
 ]
 
 
+def gemini_keys_for(purpose: str) -> list[str]:
+    """Return ordered, de-duplicated project keys for a Gemini operation."""
+    if purpose == "scope":
+        candidates = [SCOPE_GEMINI_API_KEY, CHAT_GEMINI_API_KEY]
+    elif purpose == "embedding":
+        candidates = [EMBEDDING_GEMINI_API_KEY, CHAT_GEMINI_API_KEY, SCOPE_GEMINI_API_KEY]
+    elif purpose == "chat":
+        candidates = [CHAT_GEMINI_API_KEY, SCOPE_GEMINI_API_KEY]
+    else:
+        raise ValueError(f"Unknown Gemini purpose: {purpose}")
+
+    result: list[str] = []
+    for key in candidates:
+        if key and key not in result:
+            result.append(key)
+    return result
+
+
 def validate_settings() -> None:
     missing = []
-    if not GEMINI_API_KEY:
-        missing.append("GEMINI_API_KEY")
+    if not SCOPE_GEMINI_API_KEY:
+        missing.append("SCOPE_GEMINI_API_KEY")
+    if not CHAT_GEMINI_API_KEY:
+        missing.append("CHAT_GEMINI_API_KEY")
+    if not GEMINI_MODEL_NAME:
+        missing.append("GEMINI_MODEL_NAME")
+    if not SCOPE_MODEL_NAME:
+        missing.append("SCOPE_MODEL_NAME")
     if not SUPABASE_URL:
         missing.append("SUPABASE_URL")
     if not SUPABASE_SERVICE_ROLE_KEY:
@@ -71,8 +97,7 @@ def validate_settings() -> None:
             "Missing required environment variables: " + ", ".join(missing)
         )
     if EMBEDDING_DIMENSION != 768:
-        # The currently documented Dami pgvector schema uses 768 dimensions.
-        # Change this only if the deployed vector column is confirmed otherwise.
         raise RuntimeError(
             "EMBEDDING_DIMENSION must be 768 for the current Dami database schema."
         )
+
