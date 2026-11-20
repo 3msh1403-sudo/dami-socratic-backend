@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: dami-socratic-rag
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL_NAME
+        value: gemini-2.5-flash
+      - key: SCOPE_MODEL_NAME
+        value: gemini-2.5-flash
+      - key: GOOGLE_EMBEDDING_MODEL
+        value: gemini-embedding-001
+      - key: EMBEDDING_DIMENSION
+        value: "768"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_RPC_NAME
+        value: match_dami_documents
