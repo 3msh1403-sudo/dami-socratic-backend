@@ -1,0 +1,34 @@
+
+name: Extract Backend ZIP
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract backend
+        run: |
+          mkdir extracted
+          unzip -q dami-socratic-backend-github-upload.zip -d extracted
+          cp -a extracted/dami_socratic_backend/. .
+          rm -rf extracted
+          rm dami-socratic-backend-github-upload.zip
+
+      - name: Commit extracted files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Add Dami Socratic backend"
+            git push
+          fi
