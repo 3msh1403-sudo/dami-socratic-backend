@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import requests
-
-from .config import GEMINI_API_KEY, GEMINI_MODEL_NAME, REQUEST_TIMEOUT
+from .config import GEMINI_MODEL_NAME
+from .gemini_client import post_gemini_json
 
 
 def generate_text(
@@ -12,10 +11,9 @@ def generate_text(
     user_text: str,
     temperature: float = 0.5,
     max_output_tokens: int = 1200,
+    purpose: str = "chat",
 ) -> str:
-    """Call the Google Gemini generateContent REST API."""
-    if not GEMINI_API_KEY:
-        raise RuntimeError("GEMINI_API_KEY is not configured.")
+    """Call Gemini generateContent, with project-key failover for quota/transient errors."""
     if not system_prompt or not system_prompt.strip():
         raise ValueError("System prompt cannot be empty.")
     if not user_text or not user_text.strip():
@@ -25,58 +23,45 @@ def generate_text(
         "https://generativelanguage.googleapis.com/v1beta/models/"
         f"{model_name}:generateContent"
     )
-    response = requests.post(
+    response = post_gemini_json(
         url,
-        params={"key": GEMINI_API_KEY},
-        json={
-            "systemInstruction": {
-                "parts": [{"text": system_prompt.strip()}]
-            },
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [{"text": user_text.strip()}],
-                }
-            ],
+        {
+            "systemInstruction": {"parts": [{"text": system_prompt.strip()}]},
+            "contents": [{"role": "user", "parts": [{"text": user_text.strip()}]}],
             "generationConfig": {
                 "temperature": temperature,
                 "maxOutputTokens": max_output_tokens,
             },
         },
-        timeout=REQUEST_TIMEOUT,
+        purpose=purpose,
     )
-    if not response.ok:
-        raise RuntimeError(
-            f"Gemini API error ({response.status_code}): "
-            f"{response.text[:2000]}"
-        )
 
     payload = response.json()
     candidates = payload.get("candidates") or []
     if not candidates:
         raise RuntimeError("Gemini returned no candidates.")
 
-    parts = (
-        candidates[0]
-        .get("content", {})
-        .get("parts", [])
-    )
-    text = "".join(
+    parts = candidates[0].get("content", {}).get("parts", [])
+    result = "".join(
         part.get("text", "")
         for part in parts
         if isinstance(part, dict)
     ).strip()
-    if not text:
+    if not result:
         raise RuntimeError("Gemini returned an empty response.")
-    return text
+    return result
 
 
 def generate_response(system_prompt: str, user_question: str) -> str:
-    """Generate Dami's final Socratic response using Gemini."""
+    """Generate Dami's final Socratic response using the chat project."""
     return generate_text(
         model_name=GEMINI_MODEL_NAME,
         system_prompt=system_prompt,
         user_text=user_question,
         temperature=0.55,
         max_output_tokens=1200,
+        purpose="chat",
     )
+
+
+
