@@ -84,7 +84,7 @@ def verify_signed_request(
         raise RequestAuthError("request timestamp expired")
 
     body_hash = hashlib.sha256(raw_body).hexdigest()
-    canonical = f"{method}\\n{path}\\n{timestamp}\\n{nonce}\\n{body_hash}"
+    canonical = f"{method}\n{path}\n{timestamp}\n{nonce}\n{body_hash}"
     expected = hmac.new(
         secret.encode("utf-8"), canonical.encode("utf-8"), hashlib.sha256
     ).hexdigest()
