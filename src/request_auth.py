@@ -4,7 +4,7 @@ import hashlib
 import hmac
 import re
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 import requests
 
