@@ -24,5 +24,7 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
-      - key: DAMI_RAG_SHARED_SECRET\n        sync: false\n      - key: SUPABASE_RPC_NAME
+      - key: SUPABASE_RPC_NAME
         value: match_dami_documents
+      - key: DAMI_RAG_SHARED_SECRET
+        sync: false
