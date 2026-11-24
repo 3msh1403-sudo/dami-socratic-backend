@@ -39,7 +39,7 @@ EMBEDDING_DIMENSION = int(os.getenv("EMBEDDING_DIMENSION", "768"))
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip().rstrip("/")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
-SUPABASE_RPC_NAME = os.getenv("SUPABASE_RPC_NAME", "match_dami_documents").strip()
+SUPABASE_RPC_NAME = os.getenv("SUPABASE_RPC_NAME", "match_dami_documents").strip()\nDAMI_RAG_SHARED_SECRET = os.getenv("DAMI_RAG_SHARED_SECRET", "").strip()
 
 TEXTBOOK_TOP_K = int(os.getenv("TEXTBOOK_TOP_K", "4"))
 QA_TOP_K = int(os.getenv("QA_TOP_K", "3"))
